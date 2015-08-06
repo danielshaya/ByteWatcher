@@ -1,5 +1,5 @@
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 import java.util.function.*;
 import java.util.stream.*;
 
@@ -11,97 +11,113 @@ import java.util.stream.*;
  * thread has exceeded a specified amount of allocation.
  */
 public class AllocationsMonitor {
-    public static final String ALLOCATED = " allocated ";
-    private ConcurrentMap<Thread, AllocationMonitorSingleThread> ams;
-    private volatile Consumer<Thread> threadDiedConsumer;
-    private volatile Consumer<Thread> threadCreatedConsumer;
-    private volatile long bytesThreshold;
-    private volatile BiConsumer<Thread, Long> allocationExceededConsumer;
+  public static final Consumer<Thread> EMPTY = a -> { };
+  public static final BiConsumer<Thread, Long> BI_EMPTY =
+      (a, b) -> { };
+  private final Map<Thread, AllocationMonitorSingleThread> ams;
+  private volatile Consumer<Thread> threadCreated = EMPTY;
+  private volatile Consumer<Thread> threadDied =
+      EMPTY;
+  private volatile ByteWatch byteWatch = new ByteWatch(
+      BI_EMPTY, Long.MAX_VALUE
+  );
 
-    public AllocationsMonitor() {
-        ams = Thread.getAllStackTraces()
-                .keySet()
-                .stream()
-                .map(AllocationMonitorSingleThread::new)
-                .collect(Collectors.toConcurrentMap(
-                        AllocationMonitorSingleThread::getThread,
-                        (AllocationMonitorSingleThread am) -> am));
-        // Heinz: Makes sense, right? ;-)
-        Thread monitorThread = new Thread(new Monitor(), "MonitorThread");
-        monitorThread.start();
+  private static class ByteWatch
+      implements BiConsumer<Thread, Long>, Predicate<Long>{
+    private final long threshold;
+    private final BiConsumer<Thread, Long> byteWatch;
+
+    public ByteWatch(BiConsumer<Thread, Long> byteWatch, long threshold) {
+      this.byteWatch = byteWatch;
+      this.threshold = threshold;
     }
 
-    public void printAllAllocations() {
-        ams.values()
-                .stream()
-                .forEach(this::printInfo);
+    public void accept(Thread thread, Long currentBytes) {
+      byteWatch.accept(thread, currentBytes);
     }
 
-    private void printInfo(AllocationMonitorSingleThread am) {
-        System.out.println(am.getThread().getName()
-                + ALLOCATED + am.calculateAllocations());
+    public boolean test(Long currentBytes) {
+      return threshold < currentBytes;
     }
+  }
 
-    public void onAllocationExceeded(long bytesThreshold,
-                                     BiConsumer<Thread, Long> allocationExceededConsumer) {
-        this.bytesThreshold = bytesThreshold;
-        this.allocationExceededConsumer = allocationExceededConsumer;
+  private final ScheduledExecutorService monitorService =
+      Executors.newSingleThreadScheduledExecutor();
+
+  public AllocationsMonitor() {
+    // do this first so that the worker thread is not considered
+    // a "newly created" thread
+    monitorService.scheduleAtFixedRate(
+        this::checkThreads, 500, 500, TimeUnit.MILLISECONDS);
+
+    ams = Thread.getAllStackTraces()
+        .keySet()
+        .stream()
+        .map(AllocationMonitorSingleThread::new)
+        .collect(Collectors.toConcurrentMap(
+            AllocationMonitorSingleThread::getThread,
+            (AllocationMonitorSingleThread am) -> am));
+    // Heinz: Streams make sense, right? ;-)
+  }
+
+  public void onThreadCreated(Consumer<Thread> action) {
+    threadCreated = action;
+  }
+
+  public void onThreadDied(Consumer<Thread> action) {
+    threadDied = action;
+  }
+
+  public void onByteWatch(
+      BiConsumer<Thread, Long> action, long threshold) {
+    this.byteWatch = new ByteWatch(action, threshold);
+  }
+
+  public void shutdown() {
+    monitorService.shutdown();
+  }
+
+  public void forEach(Consumer<AllocationMonitorSingleThread> c) {
+    ams.values().forEach(c);
+  }
+
+  public void printAllAllocations() {
+    forEach(System.out::println);
+  }
+
+  public void reset() {
+    forEach(AllocationMonitorSingleThread::reset);
+  }
+
+  private void checkThreads() {
+    Set<Thread> oldThreads = ams.keySet();
+    Set<Thread> newThreads = Thread.getAllStackTraces().keySet();
+
+    Set<Thread> diedThreads = new HashSet<>(oldThreads);
+    diedThreads.removeAll(newThreads);
+
+    Set<Thread> createdThreads = new HashSet<>(newThreads);
+    createdThreads.removeAll(oldThreads);
+
+    diedThreads.forEach(this::threadDied);
+    createdThreads.forEach(this::threadCreated);
+    ams.values().forEach(this::bytesWatch);
+  }
+
+  private void threadCreated(Thread t) {
+    ams.put(t, new AllocationMonitorSingleThread(t));
+    threadCreated.accept(t);
+  }
+
+  private void threadDied(Thread t) {
+    threadDied.accept(t);
+  }
+
+  private void bytesWatch(AllocationMonitorSingleThread am) {
+    ByteWatch bw = byteWatch;
+    long bytesAllocated = am.calculateAllocations();
+    if (bw.test(bytesAllocated)) {
+      bw.accept(am.getThread(), bytesAllocated);
     }
-
-    public void onThreadDied(Consumer<Thread> threadDiedConsumer) {
-        this.threadDiedConsumer = threadDiedConsumer;
-    }
-
-    public void onThreadCreated(Consumer<Thread> threadCreatedConsumer) {
-        this.threadCreatedConsumer = threadCreatedConsumer;
-    }
-
-    public void reset(){
-        ams.values().forEach(AllocationMonitorSingleThread::reset);
-    }
-
-    class Monitor implements Runnable {
-
-        public void run() {
-            while (!Thread.currentThread().isInterrupted()) {
-                checkThreads();
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        public void checkThreads() {
-            //Check if any threads have died
-            ams.keySet()
-                    .stream()
-                    .filter(t -> t.getState().equals(Thread.State.TERMINATED))
-                    .forEach(t -> {
-                        ams.remove(t);
-                        if (threadDiedConsumer != null)
-                            threadDiedConsumer.accept(t);
-                    });
-
-
-            Set<Thread> liveThreads = Thread.getAllStackTraces().keySet();
-            //Check if any threads have been created
-            liveThreads.stream()
-                    .filter(t -> ams.containsKey(t) == false)
-                    .map(AllocationMonitorSingleThread::new)
-                    .forEach(am -> {
-                        ams.put(am.getThread(), am);
-                        if (threadCreatedConsumer != null)
-                            threadCreatedConsumer.accept(am.getThread());
-                    });
-
-            if (allocationExceededConsumer != null) {
-                ams.values().stream()
-                        .filter(am -> am.calculateAllocations() > bytesThreshold)
-                        .forEach(am -> allocationExceededConsumer.accept(am.getThread(),
-                                am.calculateAllocations()));
-            }
-        }
-    }
+  }
 }
