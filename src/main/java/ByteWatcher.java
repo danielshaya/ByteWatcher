@@ -10,11 +10,11 @@ import java.util.stream.*;
  * Its primary function is to alert the user if any
  * thread has exceeded a specified amount of allocation.
  */
-public class BytesWatcher {
+public class ByteWatcher {
   public static final Consumer<Thread> EMPTY = a -> { };
   public static final BiConsumer<Thread, Long> BI_EMPTY =
       (a, b) -> { };
-  private final Map<Thread, BytesWatcherSingleThread> ams;
+  private final Map<Thread, ByteWatcherSingleThread> ams;
   private volatile Consumer<Thread> threadCreated = EMPTY;
   private volatile Consumer<Thread> threadDied =
       EMPTY;
@@ -44,7 +44,7 @@ public class BytesWatcher {
   private final ScheduledExecutorService monitorService =
       Executors.newSingleThreadScheduledExecutor();
 
-  public BytesWatcher() {
+  public ByteWatcher() {
     // do this first so that the worker thread is not considered
     // a "newly created" thread
     monitorService.scheduleAtFixedRate(
@@ -53,10 +53,10 @@ public class BytesWatcher {
     ams = Thread.getAllStackTraces()
         .keySet()
         .stream()
-        .map(BytesWatcherSingleThread::new)
+        .map(ByteWatcherSingleThread::new)
         .collect(Collectors.toConcurrentMap(
-            BytesWatcherSingleThread::getThread,
-            (BytesWatcherSingleThread am) -> am));
+            ByteWatcherSingleThread::getThread,
+            (ByteWatcherSingleThread am) -> am));
     // Heinz: Streams make sense, right? ;-)
   }
 
@@ -77,7 +77,7 @@ public class BytesWatcher {
     monitorService.shutdown();
   }
 
-  public void forEach(Consumer<BytesWatcherSingleThread> c) {
+  public void forEach(Consumer<ByteWatcherSingleThread> c) {
     ams.values().forEach(c);
   }
 
@@ -86,7 +86,7 @@ public class BytesWatcher {
   }
 
   public void reset() {
-    forEach(BytesWatcherSingleThread::reset);
+    forEach(ByteWatcherSingleThread::reset);
   }
 
   private void checkThreads() {
@@ -105,7 +105,7 @@ public class BytesWatcher {
   }
 
   private void threadCreated(Thread t) {
-    ams.put(t, new BytesWatcherSingleThread(t));
+    ams.put(t, new ByteWatcherSingleThread(t));
     threadCreated.accept(t);
   }
 
@@ -113,7 +113,7 @@ public class BytesWatcher {
     threadDied.accept(t);
   }
 
-  private void bytesWatch(BytesWatcherSingleThread am) {
+  private void bytesWatch(ByteWatcherSingleThread am) {
     ByteWatch bw = byteWatch;
     long bytesAllocated = am.calculateAllocations();
     if (bw.test(bytesAllocated)) {
