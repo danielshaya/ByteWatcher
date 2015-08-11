@@ -7,7 +7,7 @@ import static org.junit.Assert.*;
 /**
  * Created by daniel on 23/07/2015.
  */
-public class AllocationsMonitorTest {
+public class BytesWatcherTest {
 
   @Test
   public void testThreadRemoved() throws InterruptedException {
@@ -22,7 +22,7 @@ public class AllocationsMonitorTest {
     };
     t.start();
 
-    AllocationsMonitor am = new AllocationsMonitor();
+    BytesWatcher am = new BytesWatcher();
     am.onThreadDied(th -> assertNotSame(th, t));
     System.out.println("--------------------");
     t.interrupt();
@@ -32,7 +32,7 @@ public class AllocationsMonitorTest {
 
   @Test
   public void testThreadCreated() throws InterruptedException {
-    AllocationsMonitor am = new AllocationsMonitor();
+    BytesWatcher am = new BytesWatcher();
     am.onThreadCreated(System.out::println);
     am.printAllAllocations();
     System.out.println("--------------------");
@@ -55,13 +55,13 @@ public class AllocationsMonitorTest {
   @Test
   public void testAllocationExceeded() throws InterruptedException {
     long limit = 1_000_000;
-    AllocationsMonitor am = new AllocationsMonitor();
+    BytesWatcher am = new BytesWatcher();
     am.onByteWatch((t, size) ->
         System.out.printf("%s exceeded limit: %d using: %d%n",
             t.getName(), limit, size)
         , limit);
     am.printAllAllocations();
-    System.out.println("--------------------");
+    System.out.println("-------------------------------------------------------------");
 
     Thread t = new Thread("Allocating Thread") {
       public void run() {

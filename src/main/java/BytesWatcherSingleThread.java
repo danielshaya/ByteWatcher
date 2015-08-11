@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.*;
  * regression tests to make sure that there has been no
  * unintended allocation.
  */
-public class AllocationMonitorSingleThread {
+public class BytesWatcherSingleThread {
   private static final String ALLOCATED = " allocated ";
   private static final String GET_THREAD_ALLOCATED_BYTES =
       "getThreadAllocatedBytes";
@@ -36,16 +36,16 @@ public class AllocationMonitorSingleThread {
     }
   }
 
-  public AllocationMonitorSingleThread() {
+  public BytesWatcherSingleThread() {
     this(Thread.currentThread(), true);
   }
 
-  public AllocationMonitorSingleThread(Thread thread) {
+  public BytesWatcherSingleThread(Thread thread) {
     this(thread, false);
   }
 
-  private AllocationMonitorSingleThread(
-      Thread thread, boolean checkThreadSafety) {
+  private BytesWatcherSingleThread(
+          Thread thread, boolean checkThreadSafety) {
     this.checkThreadSafety = checkThreadSafety;
     this.tid = thread.getId();
     this.thread = thread;

@@ -4,10 +4,10 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 
-public class AllocationMonitorSingleThreadTest {
+public class BytesWatcherSingleThreadTest {
   @Test
   public void testQuietMeasuring() {
-    AllocationMonitorSingleThread am = new AllocationMonitorSingleThread();
+    BytesWatcherSingleThread am = new BytesWatcherSingleThread();
     System.out.println("MeasuringCostInBytes = " + am.getMeasuringCostInBytes());
 
     for (int i = 0; i < 100_000; i++) {
@@ -23,7 +23,7 @@ public class AllocationMonitorSingleThreadTest {
 
   @Test
   public void testQuietMeasuringThreadAllocatedBytes() {
-    AllocationMonitorSingleThread am = new AllocationMonitorSingleThread();
+    BytesWatcherSingleThread am = new BytesWatcherSingleThread();
     System.out.println("MeasuringCostInBytes = " + am.getMeasuringCostInBytes());
     long[] marks = new long[100_000];
     for (int i = 0; i < 100_000; i++) {
@@ -41,7 +41,7 @@ public class AllocationMonitorSingleThreadTest {
 
   @Test
   public void testAllocation() {
-    AllocationMonitorSingleThread am = new AllocationMonitorSingleThread();
+    BytesWatcherSingleThread am = new BytesWatcherSingleThread();
     System.out.println("MeasuringCostInBytes = " + am.getMeasuringCostInBytes());
 
     List<String> strings = new ArrayList<>();
@@ -60,7 +60,7 @@ public class AllocationMonitorSingleThreadTest {
   //if they are subsequently garbage collected.
   @Test
   public void testAllocationAndClean() {
-    AllocationMonitorSingleThread am = new AllocationMonitorSingleThread();
+    BytesWatcherSingleThread am = new BytesWatcherSingleThread();
     System.out.println("MeasuringCostInBytes = " + am.getMeasuringCostInBytes());
 
     List<String> strings = new ArrayList<>();
