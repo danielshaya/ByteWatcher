@@ -54,7 +54,7 @@ public class ByteWatcherTest {
 
   @Test
   public void testAllocationExceeded() throws InterruptedException {
-    long limit = 1_000_000;
+    long limit = 1<<20;
     ByteWatcher am = new ByteWatcher();
     am.onByteWatch((t, size) ->
         System.out.printf("%s exceeded limit: %d using: %d%n",

@@ -11,6 +11,7 @@ import java.util.stream.*;
  * thread has exceeded a specified amount of allocation.
  */
 public class ByteWatcher {
+  public static final int SAMPLING_INTERVAL = Integer.getInteger("samplingIntervalMillis", 500);
   public static final Consumer<Thread> EMPTY = a -> { };
   public static final BiConsumer<Thread, Long> BI_EMPTY =
       (a, b) -> { };
@@ -48,7 +49,7 @@ public class ByteWatcher {
     // do this first so that the worker thread is not considered
     // a "newly created" thread
     monitorService.scheduleAtFixedRate(
-        this::checkThreads, 500, 500, TimeUnit.MILLISECONDS);
+        this::checkThreads, SAMPLING_INTERVAL, SAMPLING_INTERVAL, TimeUnit.MILLISECONDS);
 
     ams = Thread.getAllStackTraces()
         .keySet()
