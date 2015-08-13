@@ -9,14 +9,14 @@ public class ByteWatcherSingleThreadTest {
   public void testQuietMeasuring() {
     ByteWatcherSingleThread am = new ByteWatcherSingleThread();
     System.out.println("MeasuringCostInBytes = " + am.getMeasuringCostInBytes());
+    am.calculateAllocations();
+    am.reset();
 
-    for (int i = 0; i < 100_000; i++) {
+    // this must not run for too long, otherwise we will pick up
+    // anomalies from the HotSpot compilation of this method
+    for (int i = 0; i < 10000; i++) {
       long mark1 = am.calculateAllocations();
-      try {
-        assertEquals(0, mark1);
-      } catch (AssertionError e) {
-        System.out.println("RUN:" + i + ":" + mark1);
-      }
+      assertEquals(0, mark1);
       am.reset();
     }
   }
