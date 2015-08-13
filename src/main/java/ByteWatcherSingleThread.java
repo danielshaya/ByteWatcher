@@ -52,12 +52,20 @@ public class ByteWatcherSingleThread {
     threadName = thread.getName();
     PARAMS = new Object[]{tid};
 
-    // calibrate
-    for (int i = 0; i < 1000; i++) {
-      // run a few loops to allow for startup anomalies
-      calculateAllocations();
-    }
     long calibrate = threadAllocatedBytes();
+    // calibrate
+    for (int repeats = 0; repeats < 10; repeats++) {
+      for (int i = 0; i < 10_000; i++) {
+        // run a few loops to allow for startup anomalies
+        calibrate = threadAllocatedBytes();
+      }
+      try {
+        Thread.sleep(50);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
     MEASURING_COST_IN_BYTES = threadAllocatedBytes() - calibrate;
     reset();
   }
