@@ -19,9 +19,19 @@
 import static org.junit.Assert.*;
 
 public class ByteWatcherRegressionTestHelper {
-  public static void testAllocationNotExceeded(
+  private final ByteWatcherSingleThread bw;
+
+  public ByteWatcherRegressionTestHelper(Thread thread) {
+    bw = new ByteWatcherSingleThread();
+  }
+
+  public ByteWatcherRegressionTestHelper() {
+    this(Thread.currentThread());
+  }
+
+  public void testAllocationNotExceeded(
       Runnable job, long limit) {
-    ByteWatcherSingleThread bw = new ByteWatcherSingleThread();
+    bw.reset();
     job.run();
     long size = bw.calculateAllocations();
     assertTrue(String.format("exceeded limit: %d using: %d%n",
