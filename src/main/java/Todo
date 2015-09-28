@@ -1,6 +1,7 @@
 1. The test still doesn't always work sometimes 336 bytes
-are returned instead of 0 in the first iteration.
-2. Remove System.out from AllocationMeasure and static final CALIBRATE
-3.Get rid of ConcurrentModificationException
+are returned instead of 0 in the first iteration - DONE
+2. Remove System.out from AllocationMeasure and static final
+CALIBRATE - DONE
+3.Get rid of ConcurrentModificationException - DONE
 4.MonitorThread should not be reported as created?
 5 Nice commenting to add
