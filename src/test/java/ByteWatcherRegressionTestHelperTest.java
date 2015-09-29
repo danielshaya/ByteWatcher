@@ -19,17 +19,33 @@
 import org.junit.*;
 
 public class ByteWatcherRegressionTestHelperTest {
+  private final ByteWatcherRegressionTestHelper helper =
+      new ByteWatcherRegressionTestHelper();
+
   @Test
   public void testNoAllocation() {
-    ByteWatcherRegressionTestHelper.testAllocationNotExceeded(
+    helper.testAllocationNotExceeded(
         () -> { },
+        0
+    );
+    helper.testAllocationNotExceeded(
+        this::methodThatDoesNotAllocateAnything,
         0
     );
   }
 
+  public int methodThatDoesNotAllocateAnything() {
+    int x = 42;
+    for (int i = 0; i < 10000; i++) {
+      x += i % 10;
+      x /= i % 2 + 1;
+    }
+    return x;
+  }
+
   @Test(expected = AssertionError.class)
   public void testSomeAllocation() {
-    ByteWatcherRegressionTestHelper.testAllocationNotExceeded(
+    helper.testAllocationNotExceeded(
         () -> {
           byte[] data = new byte[100];
         },
@@ -39,11 +55,13 @@ public class ByteWatcherRegressionTestHelperTest {
 
   @Test
   public void testByteArrayAllocation() {
-    ByteWatcherRegressionTestHelper.testAllocationNotExceeded(
+    System.out.println(methodThatDoesNotAllocateAnything());
+    helper.testAllocationNotExceeded(
         () -> {
           byte[] data = new byte[100];
         },
         120
     );
   }
+
 }
