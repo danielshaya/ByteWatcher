@@ -22,7 +22,7 @@ public class ByteWatcherRegressionTestHelper {
   private final ByteWatcherSingleThread bw;
 
   public ByteWatcherRegressionTestHelper(Thread thread) {
-    bw = new ByteWatcherSingleThread();
+    bw = new ByteWatcherSingleThread(thread);
   }
 
   public ByteWatcherRegressionTestHelper() {
