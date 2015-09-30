@@ -19,18 +19,23 @@
 import org.junit.*;
 
 public class ByteWatcherRegressionTestHelperTest {
-  private final ByteWatcherRegressionTestHelper helper =
-      new ByteWatcherRegressionTestHelper();
 
   @Test
   public void testNoAllocation() {
     helper.testAllocationNotExceeded(
         () -> { },
-        0
+        0 // no allocation!
     );
+  }
+
+  private final ByteWatcherRegressionTestHelper helper =
+      new ByteWatcherRegressionTestHelper();
+
+  @Test
+  public void testNoAllocationMethod() {
     helper.testAllocationNotExceeded(
         this::methodThatDoesNotAllocateAnything,
-        0
+        0 // no allocation!
     );
   }
 
@@ -49,7 +54,7 @@ public class ByteWatcherRegressionTestHelperTest {
         () -> {
           byte[] data = new byte[100];
         },
-        0
+        0 // this should fail
     );
   }
 
@@ -60,8 +65,7 @@ public class ByteWatcherRegressionTestHelperTest {
         () -> {
           byte[] data = new byte[100];
         },
-        120
+        120 // 100 bytes, plus the object header, plus int length
     );
   }
-
 }
