@@ -1,3 +1,4 @@
+package org.octtech.bw;
 /*
  * Copyright (C) 2015 Daniel Shaya and Heinz Max Kabutz
  *
@@ -17,6 +18,7 @@
  */
 
 import org.junit.*;
+import org.octtech.bw.ByteWatcherSingleThread;
 
 import java.util.*;
 
