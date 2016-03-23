@@ -35,7 +35,7 @@ public class ByteWatcher {
   public static final Consumer<Thread> EMPTY = a -> { };
   public static final BiConsumer<Thread, Long> BI_EMPTY =
       (a, b) -> { };
-  private final Map<Thread, ByteWatcherSingleThread> ams;
+  private volatile Map<Thread, ByteWatcherSingleThread> ams;
   private volatile Consumer<Thread> threadCreated = EMPTY;
   private volatile Consumer<Thread> threadDied =
       EMPTY;
@@ -114,6 +114,10 @@ public class ByteWatcher {
   }
 
   private void checkThreads() {
+    if (ams==null) {
+      return;
+    }
+
     Set<Thread> oldThreads = ams.keySet();
     Set<Thread> newThreads = Thread.getAllStackTraces().keySet();
 
