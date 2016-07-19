@@ -80,7 +80,7 @@ public class ByteWatcher {
         .map(ByteWatcherSingleThread::new)
         .collect(Collectors.toConcurrentMap(
             ByteWatcherSingleThread::getThread,
-            (ByteWatcherSingleThread am) -> am));
+            Function.identity()));
     // Heinz: Streams make sense, right? ;-)
   }
 
